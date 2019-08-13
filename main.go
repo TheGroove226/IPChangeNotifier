@@ -70,7 +70,7 @@ func main() {
 			fmt.Println("No changes detected.\n")
 		} else {
 			oldIP = currentIPAddress
-			webhookURL := "https://hooks.slack.com/services/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"
+			webhookURL := "https://hooks.slack.com/services/<YOUR TOKEN HERE>"
 			msg := "New IP Address: " + currentIPAddress
 			err := SlackNotification(webhookURL, msg)
 			if err != nil {
