@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
+
+	externalip "github.com/glendc/go-external-ip"
 )
 
 // SlackRequestBody ... Struct for JSON message request to Slack
@@ -18,15 +19,14 @@ type SlackRequestBody struct {
 // CheckCurrentIPAddress ... function to check current public IP address
 func CheckCurrentIPAddress() string {
 
-	ip, err := http.Get("http://myexternalip.com/raw")
-	if err != nil {
-		fmt.Println("Connection Lost\n")
-	}
-	defer ip.Body.Close()
-	responseData, err := ioutil.ReadAll(ip.Body)
-	responseString := string(responseData)
+	consensus := externalip.DefaultConsensus(nil, nil)
 
-	return responseString
+	ip, err := consensus.ExternalIP()
+	if err == nil {
+		fmt.Println(ip.String()) // print IPv4/IPv6 in string format
+	}
+	return ip.String()
+
 }
 
 // SlackNotification ... Function to inform you that IP has changed
@@ -48,7 +48,7 @@ func SlackNotification(webhookURL string, msg string) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)
 	if buf.String() != "ok" {
-		return errors.New("Slack Did Not Responded!")
+		return errors.New("Error!")
 	}
 	return nil
 }
@@ -69,14 +69,13 @@ func main() {
 		if currentIPAddress == oldIP {
 			fmt.Println("No changes detected.\n")
 		} else {
-			oldIP = currentIPAddress
 			webhookURL := "https://hooks.slack.com/services/<YOUR TOKEN HERE>"
-			msg := "New IP Address: " + currentIPAddress
+			msg := "IP address has changed. New IP Address: " + currentIPAddress
 			err := SlackNotification(webhookURL, msg)
 			if err != nil {
 				fmt.Println("Could Not Send Message!")
 			}
+			oldIP = currentIPAddress
 		}
-
 	}
 }
